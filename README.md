@@ -122,9 +122,13 @@ pinout*. Make sure the listing says **K718**, not W518. More detail on the
 4. **First flash over USB** - easiest via the **ESPHome dashboard** (GUI) or the CLI; the 16 MB partition table can't be set over OTA, so the first flash is USB, then updates go wireless.
 5. In Home Assistant: open the new ESPHome device → assign an Assist pipeline.
 
-To pull the latest changes later: `esphome clean guition-va.yaml` (clears the package cache) then `esphome run guition-va.yaml`.
+To pull the latest changes later: `./build.sh clean guition-va.yaml` (clears the package cache) then `./build.sh run guition-va.yaml`.
 
 Full details on the [Installation](https://github.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/wiki/Installation) wiki page.
+
+## Python Dependency management
+
+The python dependencies and virtual environments are strictly managed by `uv`. Use `uv add ...` instead of `pip install ...` to add a dependency, and `uv run ...` instead of `python ...` to run a script. This ensures the correct versions are used and avoids conflicts with other projects. An additional benefit is that `uv` automatically creates a virtual environment for the project, keeping dependencies isolated. This leads to everyone using this project having the same versions of dependencies, which is crucial for reproducibility and avoiding "it works on my machine" issues.
 
 ## Repository layout
 
