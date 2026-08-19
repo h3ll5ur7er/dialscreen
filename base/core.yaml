@@ -169,6 +169,7 @@ esphome:
               else if (tok == "snake") id = 9;
               else if (tok == "gyruss" || tok == "knobuss") id = 10;
               else if (tok == "ext") id = 11;
+              else if (tok == "temps") id = 12;
               if (id >= 0 && id < 16 && id(g_present)[id]) id(g_order)[id(g_order_n)++] = id;
               if (comma == std::string::npos) break;
               pos = comma + 1;
@@ -781,6 +782,10 @@ globals:
     type: float
     restore_value: no
     initial_value: '1.0'
+  - id: g_ring_alert  # screen-raised ring alert: 0=none 1=cool/blue 2=warm/amber (see the ring_alert script)
+    type: int
+    restore_value: no
+    initial_value: '0'
   - id: g_va_phase    # assistant phase for the ring: 1=listening 2=thinking 3=speaking
     type: int
     restore_value: no
@@ -1322,6 +1327,7 @@ script:
           if (id(g_mode) == 4 && id(g_ring_alarm)) desired = 1;                     // alarm
           else if (id(g_va_active) && id(g_ring_va)) desired = 20 + id(g_va_phase); // 21=listening 22=thinking 23=speaking
           else if (id(g_vol_show) && id(g_ring_vol_en)) desired = 5;               // volume (briefly, ~2 s)
+          else if (id(g_ring_alert) != 0) desired = 10 + id(g_ring_alert);         // 11/12 = a screen's alert
           else if (id(g_timer_active) && id(g_ring_timer)) desired = 3;            // timer
           else desired = 0;                                                        // HA state
           if (desired == id(g_ring_cur)) return;       // no change -> do nothing (the effect animates itself)
@@ -1341,6 +1347,7 @@ script:
           else if (desired == 23) eff = "Speak";
           else if (desired == 5)  eff = "Volume";
           else if (desired == 3)  eff = "Timer";
+          else if (desired == 11 || desired == 12) eff = "Alert";
           if (eff != nullptr) {
             auto c = id(ring_light)->turn_on(); c.set_effect(eff); c.set_brightness(1.0f); c.perform();
           } else {                                     // all reactions cleared -> restore HA state
@@ -1356,6 +1363,19 @@ script:
             }
           }
           id(g_ring_cur) = desired;
+  # Ring alert any screen package can raise: dir 1 = cool/blue, 2 = warm/amber, for `secs` seconds.
+  # Goes through ring_update, so it respects the alarm/assistant priorities and restores the HA state.
+  - id: ring_alert
+    mode: restart
+    parameters:
+      dir: int
+      secs: int
+    then:
+      - lambda: 'id(g_ring_alert) = dir;'
+      - script.execute: ring_update
+      - delay: !lambda 'return (uint32_t) secs * 1000;'
+      - lambda: 'id(g_ring_alert) = 0;'
+      - script.execute: ring_update
   # Shows volume on the ring for ~2 s while turning the knob (mode: restart), then returns to state/reaction.
   - id: ring_vol_flash
     mode: restart
@@ -1831,6 +1851,15 @@ light:
               if (i < lit) it[i] = Color((uint8_t)(40 + 215 * v), (uint8_t)(200 * (1.0f - v)), 0);
               else it[i] = Color(6, 6, 6);
             }
+      - addressable_lambda:    # Screen alert: slow breathing pulse, colour by g_ring_alert (1=cool blue, 2=warm amber)
+          name: "Alert"
+          update_interval: 50ms
+          lambda: |-
+            float ph = (millis() % 1600) / 1600.0f;          // ~0.6 Hz breath
+            float b = 0.25f + 0.75f * (0.5f - 0.5f * cosf(ph * 6.2831853f));
+            Color c = (id(g_ring_alert) == 2) ? Color((uint8_t)(255 * b), (uint8_t)(150 * b), (uint8_t)(20 * b))
+                                              : Color((uint8_t)(20 * b), (uint8_t)(160 * b), (uint8_t)(255 * b));
+            it.all() = c;
       - addressable_lambda:    # Alarm: pulsing red
           name: "Alarm"
           update_interval: 280ms

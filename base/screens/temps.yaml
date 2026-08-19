@@ -1,0 +1,306 @@
+# ============================================================================
+# INSIDE vs OUTSIDE - optional carousel screen (base id 12, carousel name "temps")
+# ----------------------------------------------------------------------------
+# A rolling 6-hour plot of the room temperature against the outdoor temperature -
+# the "should I open or close the windows?" screen.
+#
+#   * teal line  = inside   (${room_temp_entity}, core's room_temp sensor)
+#   * amber line = outside  (g_wx_temp: ${outdoor_temp_entity} if set, else the
+#                            weather entity's forecast temperature)
+#   * the line under the plot says which way round it currently is
+#   * when the two curves CROSS, the LED ring breathes for 20 s - blue when it has
+#     turned cooler outside (open up), amber when it has turned warmer (close up).
+#     Toggle that in Settings -> Widgets -> Temps -> "Ring on cross".
+#
+# No new entities to configure: it reuses the two the home screen already shows.
+# The 72-sample history lives in RAM, so a reboot starts the plot over.
+#
+# Remove it: drop this file from the package "files:" list.
+# ============================================================================
+
+esphome:
+  on_boot:
+    - priority: 655
+      then:
+        - lambda: 'id(g_present)[12] = true;'   # register in the carousel
+    # Settings -> Widgets -> Temps
+    - priority: 650
+      then:
+        - lambda: |-
+            int g = id(g_wgrp_n)++;
+            id(g_wgrp_labels) += (g ? "\n" : ""); id(g_wgrp_labels) += "Temps";
+            int o = id(g_wopt_n)++;
+            id(g_wopt_group)[o] = g; id(g_wopt_label)[o] = "Ring on cross"; id(g_wopt_kind)[o] = 0; id(g_wopt_ptr)[o] = &id(g_tp_ring);
+
+globals:
+  # --- history (plain arrays, oldest first; one sample every 5 min = a 6 h window) ---
+  - id: g_tp_in        # inside samples
+    type: float[72]
+    restore_value: no
+  - id: g_tp_out       # outside samples
+    type: float[72]
+    restore_value: no
+  - id: g_tp_n         # how many samples are filled (caps at 72)
+    type: int
+    restore_value: no
+    initial_value: '0'
+  # --- what the last render worked out (read by the label lambdas below) ---
+  - id: g_tp_lo        # y-axis ends of the current plot
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+  - id: g_tp_hi
+    type: float
+    restore_value: no
+    initial_value: '0.0'
+  - id: g_tp_state     # 0 = no data yet, 1 = warmer outside, 2 = cooler outside, 3 = about equal
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: g_tp_txt       # the verdict line under the plot
+    type: std::string
+    restore_value: no
+  # --- cross detection ---
+  - id: g_tp_sign      # which way round it is now: 1 = warmer outside, -1 = cooler outside, 0 = unknown
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: g_tp_alert_req # set by the cross check, consumed by the ring_alert call (0 = nothing pending)
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: g_tp_alert_t   # millis() of the last ring alert (re-arm guard)
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+  - id: g_tp_ring      # Settings -> Widgets -> Temps: ring reaction on a crossing
+    type: bool
+    restore_value: yes
+    initial_value: 'true'
+
+script:
+  # Appends one sample pair, shifting the window left once it is full.
+  - id: tp_sample
+    then:
+      - lambda: |-
+          if (!id(room_temp).has_state() || id(g_wx_temp) < -100.0f) return;
+          float in = id(room_temp).state, out = id(g_wx_temp);
+          if (id(g_tp_n) < 72) {
+            id(g_tp_in)[id(g_tp_n)] = in; id(g_tp_out)[id(g_tp_n)] = out; id(g_tp_n)++;
+          } else {
+            for (int i = 1; i < 72; i++) { id(g_tp_in)[i-1] = id(g_tp_in)[i]; id(g_tp_out)[i-1] = id(g_tp_out)[i]; }
+            id(g_tp_in)[71] = in; id(g_tp_out)[71] = out;
+          }
+
+  # Redraws both curves and the labels. Only worth calling while the screen is visible.
+  - id: tp_render
+    then:
+      # 1) verdict + y-axis scale + the curves themselves. lv_line_set_points is the one
+      #    thing with no YAML action, so the point arrays are built here by hand.
+      - lambda: |-
+          bool have = id(room_temp).has_state() && id(g_wx_temp) > -100.0f;
+          char b[32];
+          if (!have) {
+            id(g_tp_state) = 0;
+            id(g_tp_txt) = "waiting for data";
+          } else {
+            float d = id(g_wx_temp) - id(room_temp).state;
+            if (d > 0.3f)       { id(g_tp_state) = 1; snprintf(b, sizeof(b), "+%.1f\xC2\xB0 WARMER OUT", d);  id(g_tp_txt) = b; }
+            else if (d < -0.3f) { id(g_tp_state) = 2; snprintf(b, sizeof(b), "%.1f\xC2\xB0 COOLER OUT", d);   id(g_tp_txt) = b; }
+            else                { id(g_tp_state) = 3; id(g_tp_txt) = "ABOUT EQUAL"; }
+          }
+
+          int n = id(g_tp_n);
+          if (n < 2) return;                       // not enough history yet - the actions below hide the curves
+
+          // plot box in screen coordinates (fits inside the 360x360 circle)
+          const int X0 = 66, X1 = 294, Y0 = 122, Y1 = 248;
+          float lo = 1e9f, hi = -1e9f;
+          for (int i = 0; i < n; i++) {
+            lo = fminf(lo, fminf(id(g_tp_in)[i], id(g_tp_out)[i]));
+            hi = fmaxf(hi, fmaxf(id(g_tp_in)[i], id(g_tp_out)[i]));
+          }
+          if (hi - lo < 4.0f) { float mid = (hi + lo) * 0.5f; lo = mid - 2.0f; hi = mid + 2.0f; }  // keep sensor noise from looking dramatic
+          lo -= 0.5f; hi += 0.5f;
+          id(g_tp_lo) = lo; id(g_tp_hi) = hi;
+          const float span = hi - lo;
+
+          // LVGL keeps a POINTER to these arrays, so they must outlive this lambda -> static.
+          static lv_point_precise_t pin[72], pout[72];
+          for (int i = 0; i < n; i++) {
+            int32_t x = X0 + (int32_t) ((int64_t) i * (X1 - X0) / (n - 1));
+            pin[i].x  = x;
+            pin[i].y  = (int32_t) (Y1 - (id(g_tp_in)[i]  - lo) / span * (Y1 - Y0));
+            pout[i].x = x;
+            pout[i].y = (int32_t) (Y1 - (id(g_tp_out)[i] - lo) / span * (Y1 - Y0));
+          }
+          lv_line_set_points(id(tp_line_in)->obj,  pin,  n);
+          lv_line_set_points(id(tp_line_out)->obj, pout, n);
+
+      # 2) current values
+      - lvgl.label.update:
+          id: tp_val_in
+          text: !lambda 'if (!id(room_temp).has_state()) return std::string("--"); char b[12]; snprintf(b, sizeof(b), "%.1f°", id(room_temp).state); return std::string(b);'
+      - lvgl.label.update:
+          id: tp_val_out
+          text: !lambda 'if (id(g_wx_temp) < -100.0f) return std::string("--"); char b[12]; snprintf(b, sizeof(b), "%.1f°", id(g_wx_temp)); return std::string(b);'
+
+      # 3) the verdict, colour-coded like the curves
+      - lvgl.label.update: { id: tp_advice, text: !lambda 'return id(g_tp_txt);' }
+      - if:
+          condition: { lambda: 'return id(g_tp_state) == 1;' }
+          then: [ lvgl.label.update: { id: tp_advice, text_color: 0xF5B83D } ]     # warmer outside -> close up
+      - if:
+          condition: { lambda: 'return id(g_tp_state) == 2;' }
+          then: [ lvgl.label.update: { id: tp_advice, text_color: 0x3FA9D6 } ]     # cooler outside -> open up
+      - if:
+          condition: { lambda: 'return id(g_tp_state) == 0 || id(g_tp_state) == 3;' }
+          then: [ lvgl.label.update: { id: tp_advice, text_color: 0x9FC7BE } ]
+
+      # 4) curves vs. the "collecting" hint
+      - if:
+          condition: { lambda: 'return id(g_tp_n) >= 2;' }
+          then:
+            - lvgl.widget.hide: tp_hint
+            - lvgl.widget.show: tp_line_in
+            - lvgl.widget.show: tp_line_out
+            - lvgl.label.update:
+                id: tp_scale_hi
+                text: !lambda 'char b[8]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(g_tp_hi))); return std::string(b);'
+            - lvgl.label.update:
+                id: tp_scale_lo
+                text: !lambda 'char b[8]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(g_tp_lo))); return std::string(b);'
+            - lvgl.label.update:
+                id: tp_span
+                text: !lambda |-
+                  int mins = (id(g_tp_n) - 1) * 5;
+                  char b[16];
+                  if (mins >= 60) snprintf(b, sizeof(b), "last %dh%02dm", mins / 60, mins % 60);
+                  else snprintf(b, sizeof(b), "last %d min", mins);
+                  return std::string(b);
+          else:
+            - lvgl.widget.show: tp_hint
+            - lvgl.widget.hide: tp_line_in
+            - lvgl.widget.hide: tp_line_out
+            - lvgl.label.update: { id: tp_scale_hi, text: "" }
+            - lvgl.label.update: { id: tp_scale_lo, text: "" }
+            - lvgl.label.update: { id: tp_span, text: "" }
+
+interval:
+  # Carousel navigation: show this screen's page when it is selected.
+  - interval: 50ms
+    then:
+      - if:
+          condition: { lambda: 'return id(g_nav_req) && id(g_base)==12;' }
+          then:
+            - lambda: 'id(g_nav_req) = false;'
+            - if: { condition: { lambda: 'return id(g_nav_anim)==0;' }, then: [lvgl.page.show: { id: page_temps, animation: move_left,   time: 250ms }] }
+            - if: { condition: { lambda: 'return id(g_nav_anim)==1;' }, then: [lvgl.page.show: { id: page_temps, animation: move_right,  time: 250ms }] }
+            - if: { condition: { lambda: 'return id(g_nav_anim)==2;' }, then: [lvgl.page.show: { id: page_temps, animation: move_top,    time: 250ms }] }
+            - if: { condition: { lambda: 'return id(g_nav_anim)==3;' }, then: [lvgl.page.show: { id: page_temps, animation: move_bottom, time: 250ms }] }
+            - script.execute: tp_render
+
+  # One sample every 5 minutes -> 72 samples = a 6-hour window.
+  - interval: 5min
+    then:
+      - script.execute: tp_sample
+      - if:
+          condition: { lambda: 'return id(g_base)==12;' }
+          then: [ script.execute: tp_render ]
+
+  # Cross detection runs on the LIVE values (not the 5-min grid) so the alert is prompt,
+  # and it runs on every screen - this is a whole-device notification, like the timer alarm.
+  - interval: 30s
+    then:
+      - if:   # seed the plot as soon as both values exist, instead of waiting 5 min for the first point
+          condition:
+            lambda: 'return id(g_tp_n) == 0 && id(room_temp).has_state() && id(g_wx_temp) > -100.0f;'
+          then: [ script.execute: tp_sample ]
+      - lambda: |-
+          if (!id(room_temp).has_state() || id(g_wx_temp) < -100.0f) return;
+          float d = id(g_wx_temp) - id(room_temp).state;
+          int prev = id(g_tp_sign), now = prev;
+          if (d > 0.3f) now = 1;                                  // 0.3 deg deadband, so hovering around equality can't flap
+          else if (d < -0.3f) now = -1;
+          if (now == prev) return;
+          id(g_tp_sign) = now;
+          if (prev == 0) return;                                  // the first classification is not a crossing
+          if (!id(g_tp_ring)) return;
+          if (id(g_disp_off)) return;                             // screen asleep (night mode) - nobody is looking, don't light up the room
+          uint32_t t = millis();
+          if (id(g_tp_alert_t) != 0 && t - id(g_tp_alert_t) < 600000) return;   // at most one alert per 10 min
+          id(g_tp_alert_t) = t;
+          id(g_tp_alert_req) = (now == 1) ? 2 : 1;                // warmer out -> amber "close up", cooler out -> blue "open up"
+      - if:
+          condition: { lambda: 'return id(g_tp_alert_req) != 0;' }
+          then:
+            - script.execute:
+                id: ring_alert
+                dir: !lambda 'return id(g_tp_alert_req);'
+                secs: 20
+            - lambda: 'id(g_tp_alert_req) = 0;'
+      - if:
+          condition: { lambda: 'return id(g_base)==12;' }
+          then: [ script.execute: tp_render ]
+
+lvgl:
+  pages:
+    - id: page_temps
+      bg_color: 0x0B1020
+      widgets:
+        - label: { id: tp_title, align: CENTER, y: -142, text: "INSIDE / OUTSIDE", text_font: font_artist, text_color: 0x6F9A92, text_letter_space: 2 }
+        # current values: teal = inside, amber = outside
+        - label: { id: tp_lbl_in,  align: CENTER, x: -78, y: -112, text: "IN",  text_font: font_artist, text_color: 0x2FE6CF }
+        - label: { id: tp_val_in,  align: CENTER, x: -78, y: -86,  text: "--",  text_font: font_sel,    text_color: 0x2FE6CF }
+        - label: { id: tp_lbl_out, align: CENTER, x: 78,  y: -112, text: "OUT", text_font: font_artist, text_color: 0xF5B83D }
+        - label: { id: tp_val_out, align: CENTER, x: 78,  y: -86,  text: "--",  text_font: font_sel,    text_color: 0xF5B83D }
+        # plot panel - the curves are drawn over it in screen coordinates (x 66..294, y 122..248)
+        - obj:
+            id: tp_panel
+            x: 62
+            y: 116
+            width: 236
+            height: 138
+            radius: 14
+            bg_color: 0x121A2C
+            bg_opa: COVER
+            border_width: 1
+            border_color: 0x21304A
+            clickable: false
+            scrollable: false
+        # The two curves. Full-screen transparent widgets, so the points set in tp_render
+        # can be plain screen coordinates. Outside first, so the room curve draws on top.
+        - line:
+            id: tp_line_out
+            x: 0
+            y: 0
+            width: 360
+            height: 360
+            clickable: false
+            scrollable: false
+            hidden: true
+            line_width: 3
+            line_color: 0xF5B83D
+            line_rounded: true
+            pad_all: 0
+            points: [{x: 0, y: 0}, {x: 0, y: 0}]
+        - line:
+            id: tp_line_in
+            x: 0
+            y: 0
+            width: 360
+            height: 360
+            clickable: false
+            scrollable: false
+            hidden: true
+            line_width: 3
+            line_color: 0x2FE6CF
+            line_rounded: true
+            pad_all: 0
+            points: [{x: 0, y: 0}, {x: 0, y: 0}]
+        # y-axis ends (just left of the panel), how much history is on screen, and the verdict
+        - label: { id: tp_scale_hi, align: CENTER, x: -140, y: -52, text: "", text_font: font_artist, text_color: 0x5A6B84 }
+        - label: { id: tp_scale_lo, align: CENTER, x: -140, y: 60,  text: "", text_font: font_artist, text_color: 0x5A6B84 }
+        - label: { id: tp_hint, align: CENTER, y: 4, text: "collecting...", text_font: font_med, text_color: 0x466761 }
+        - label: { id: tp_span, align: CENTER, y: 84, text: "", text_font: font_artist, text_color: 0x466761 }
+        - label: { id: tp_advice, align: CENTER, y: 112, text: "", text_font: font_med, text_color: 0x9FC7BE, text_letter_space: 1 }

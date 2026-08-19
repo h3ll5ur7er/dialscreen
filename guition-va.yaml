@@ -83,7 +83,7 @@ substitutions:
 
   # Carousel order, left to right. Reorder/remove names freely; screens you did not
   # include in "files:" below are skipped automatically.
-  screen_order: "clock,player,timer,weather,sensors,cars,space,snake,knobuss,demo"
+  screen_order: "clock,player,timer,weather,temps,sensors,cars,space,snake,knobuss,demo"
 
 packages:
   core:
@@ -96,13 +96,14 @@ packages:
       - base/core.yaml
       - base/screens/player.yaml       # optional: music player (album art + transport)
       - base/screens/timer.yaml        # optional: timer screen in the carousel (voice timers/alarm stay regardless)
-      - base/screens/cool-cars.yaml    # optional: Cool Cars game
-      - base/screens/space-wars.yaml   # optional: Space Wars game
-      - base/screens/snake.yaml        # optional: Snake game (knob steers)
-      - base/screens/knobuss.yaml      # optional: Knobuss - a Gyruss-style tube shooter (knob aims, auto-fire)
+      # - base/screens/cool-cars.yaml    # optional: Cool Cars game
+      # - base/screens/space-wars.yaml   # optional: Space Wars game
+      # - base/screens/snake.yaml        # optional: Snake game (knob steers)
+      # - base/screens/knobuss.yaml      # optional: Knobuss - a Gyruss-style tube shooter (knob aims, auto-fire)
       - base/screens/weather.yaml      # optional: weather (today + 7-day, knob scrolls days)
       - base/screens/sensors.yaml      # optional: sensors glance (1-6 HA entities, knob cycles)
-      - base/screens/demo.yaml         # optional: commented example screen (TAP ME!) + Widgets settings
+      - base/screens/temps.yaml        # optional: inside-vs-outside temperature plot (+ LED ring alert when they cross)
+      # - base/screens/demo.yaml         # optional: commented example screen (TAP ME!) + Widgets settings
       # - base/screens/thermostat.yaml       # needs a climate.* entity - none in this HA
       # - base/screens/ext-media-player.yaml # needs six button.* entities - none in this HA
       # Watchfaces (optional home-screen looks; Classic is built into core and always available).

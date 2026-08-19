@@ -35,7 +35,8 @@ concatenate), so each screen file is self-contained and the core never names a s
 symbols. The glue is a few plain globals in the core:
 
 - `g_base` (int) - id of the current carousel screen. Fixed ids: 0=clock, 1=player,
-  2=timer, 3=cars, 4=space (an id never changes, even if a screen is absent).
+  2=timer, 3=cars, 4=space, 5=weather, 6=demo, 7=thermostat, 8=sensors, 9=snake,
+  10=knobuss, 11=ext, 12=temps (an id never changes, even if a screen is absent).
 - `g_order[12]`, `g_order_n` - carousel order, built at boot. Core seeds clock+player;
   each screen package appends its id in an `esphome.on_boot` step (priority sets the
   position). Swipe left/right just steps through `g_order` and wraps.
@@ -52,6 +53,10 @@ symbols. The glue is a few plain globals in the core:
   `g_wgrp_labels`, then append each option (label + kind 0=toggle / 1=action + a `bool*`
   to its own global) to `g_wopt_*`. The core renders them generically (modes 30 options /
   31 confirm). The option globals live in the screen package, not the core.
+- `ring_alert` (script, `dir` 1=cool/blue 2=warm/amber + `secs`) - a screen can raise a
+  ring reaction without touching the core's arbiter: it runs at a priority above the timer
+  countdown and below the assistant, and restores the HA ring state when it expires. The
+  Temps screen uses it when the inside/outside curves cross.
 - `g_factory_reset` (bool, persists a reboot) - Settings -> System -> Factory reset sets
   it; each game package clears its own score globals when it sees the flag in its tick.
 
