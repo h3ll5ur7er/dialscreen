@@ -440,161 +440,161 @@ interval:
 image:
   - platform: file
     id: img_gy_ship0
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship0.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship0.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship1
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship1.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship1.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship2
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship2.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship2.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship3
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship3.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship3.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship4
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship4.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship4.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship5
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship5.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship5.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship6
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship6.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship6.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship7
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship7.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship7.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship8
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship8.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship8.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship9
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship9.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship9.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship10
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship10.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship10.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship11
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship11.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship11.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship12
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship12.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship12.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship13
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship13.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship13.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship14
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship14.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship14.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_ship15
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/ship15.png"
+    file: "${assets_base}/assets/sprites/knobuss/ship15.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_enemy0
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/enemy0.png"
+    file: "${assets_base}/assets/sprites/knobuss/enemy0.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_enemy1
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/enemy1.png"
+    file: "${assets_base}/assets/sprites/knobuss/enemy1.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_enemy2
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/enemy2.png"
+    file: "${assets_base}/assets/sprites/knobuss/enemy2.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_enemy3
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/enemy3.png"
+    file: "${assets_base}/assets/sprites/knobuss/enemy3.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl0
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl0.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl0.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl1
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl1.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl1.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl2
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl2.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl2.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl3
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl3.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl3.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl4
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl4.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl4.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl5
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl5.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl5.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl6
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl6.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl6.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_expl7
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/expl7.png"
+    file: "${assets_base}/assets/sprites/knobuss/expl7.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_bullet
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/bullet.png"
+    file: "${assets_base}/assets/sprites/knobuss/bullet.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_core
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/core.png"
+    file: "${assets_base}/assets/sprites/knobuss/core.png"
     type: RGB565
     transparency: alpha_channel
   - platform: file
     id: img_gy_logo
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/knobuss-logo.png"
+    file: "${assets_base}/assets/sprites/knobuss/knobuss-logo.png"
     type: RGB565
   - platform: file
     id: img_gy_life
-    file: "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/knobuss/life.png"
+    file: "${assets_base}/assets/sprites/knobuss/life.png"
     type: RGB565
     transparency: alpha_channel
 lvgl:

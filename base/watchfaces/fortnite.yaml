@@ -47,7 +47,7 @@ image:
   # Baked background (wallpaper + scrims + storm rim), fetched at compile time
   - platform: file
     id: img_fn_bg
-    file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/fortnite/bg.png
+    file: ${assets_base}/assets/sprites/fortnite/bg.png
     type: RGB565
 
 lvgl:
@@ -341,8 +341,8 @@ script:
                   - lvgl.label.update:
                       id: fn_wx_temp
                       text: !lambda |-
-                        if (!id(wx_temp).has_state()) return std::string("--°");
-                        char b[10]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(wx_temp).state)); return std::string(b);
+                        if (id(g_wx_temp) < -100.0f) return std::string("--°");
+                        char b[10]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(g_wx_temp))); return std::string(b);
                 else: [ lvgl.widget.hide: fn_wx_ic, lvgl.widget.hide: fn_wx_temp ]
             # Mats row obeys the Climate toggle
             - if:

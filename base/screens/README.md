@@ -15,7 +15,7 @@ screens from GitHub as a remote package. Pick screens in its `files:` list:
 ```yaml
 packages:
   core:
-    url: https://github.com/MichalZaniewicz/esphome-guition-jc3636k718c-va
+    url: https://github.com/h3ll5ur7er/dialscreen
     ref: beta
     files:
       - base/core.yaml                 # always on (clock + controls + settings)

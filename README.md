@@ -173,13 +173,13 @@ scripts/
   gen_snake.py             # (re)generate the snake sprites
   gen_fortnite_bg.py       # bake a wallpaper into the "Fortnite" watchface background
   esplog.py                # stream device logs over the native API
-skill/                     # Claude Code skill: hardware spec + gotchas
+.agents/skills/            # Claude Code skill: hardware spec + gotchas
 ```
 
 ## Claude Code skill
 
 This repo ships a [Claude Code](https://claude.com/claude-code) skill at
-[`skill/guition-jc3636k718c/`](skill/guition-jc3636k718c/SKILL.md). It gives the
+[`.agents/skills/guition-jc3636k718c/`](.agents/skills/guition-jc3636k718c/SKILL.md). It gives the
 assistant the correct pinout, ESPHome component choices, and the hard-won gotchas
 (the knob isn't quadrature, GPIO0 ring strapping, 16 MB partitions need a USB flash,
 LVGL performance limits, lambda/string pitfalls, the battery heuristic).
@@ -190,7 +190,7 @@ So Claude can use it on any project:
 
 - **User-wide** - copy the folder into `~/.claude/skills/`:
   ```bash
-  cp -r skill/guition-jc3636k718c ~/.claude/skills/
+  cp -r .agents/skills/guition-jc3636k718c ~/.claude/skills/
   ```
 - **Per-project** - copy it into that project's `.claude/skills/`.
 

@@ -4,94 +4,90 @@
 # Copy THIS file (+ partitions.csv + a secrets.yaml) next to each other, edit the
 # entities/tiles below to match your Home Assistant, then:
 #
-#   esphome run guition-va.yaml
+#   ./build.sh run
 #
 # Everything else (the firmware core + the optional screens) is pulled from GitHub
 # at compile time - see the `packages:` block at the bottom - so you only ever
 # maintain this one file. To get the latest changes:
 #
-#   esphome clean guition-va.yaml   # clears the package cache
-#   esphome run   guition-va.yaml
+#   ./build.sh clean          # clears the package cache, then compiles
+#
+# NOTE: because the core is pulled from GitHub, edits to base/**.yaml only reach
+# the firmware once they are committed and pushed to the `ref:` branch below.
 # =============================================================================
 
 substitutions:
   name: voice-knob
   friendly_name: "Voice Knob"
-  timezone: "Europe/Warsaw"   # IANA name; core maps common zones to POSIX. Zone not listed? paste a POSIX string (github.com/nayarsystems/posix_tz_db). DST automatic.
-  # For album art: base URL of your HA + the media_player entity
-  ha_base_url: "http://homeassistant.local:8123"
+  timezone: "Europe/Zurich"   # IANA name; core maps common zones to POSIX. Zone not listed? paste a POSIX string (github.com/nayarsystems/posix_tz_db). DST automatic.
+  # Assets (fonts, sounds, sprites) are fetched from here at compile time.
+  assets_base: "https://raw.githubusercontent.com/h3ll5ur7er/dialscreen/main"
+  # For album art: base URL of your HA + the media_player entity.
+  # player_entity is created BY this firmware once it is flashed (media_player.<name>_player).
+  ha_base_url: "https://homeassistant.hellsurfer.win"
   player_entity: media_player.voice_knob_player
   # On-device wake word. Built-in models: alexa, okay_nabu, hey_jarvis, hey_mycroft.
-  wake_word: "alexa"
-  # Home screen (weather + room climate). Change to your entities.
-  weather_entity: weather.home
-  room_temp_entity: sensor.room_temperature
-  room_hum_entity: sensor.room_humidity
-  # Weather screen forecast: an HA helper sensor (see base/screens/weather.ha-helper.yaml)
-  forecast_entity: sensor.va_weekly_forecast
-  # Thermostat screen: the climate.* entity it controls
-  climate_entity: climate.living_room
+  wake_word: "hey_jarvis"
+  # Home screen (weather + room climate).
+  weather_entity: weather.forecast_home          # condition icon + forecast fallback
+  outdoor_temp_entity: sensor.ths05_temperature  # real outdoor thermometer - wins over the forecast temp
+  room_temp_entity: sensor.ths01_temperature     # indoor
+  room_hum_entity: sensor.ths01_humidity
+  # Weather screen forecast: fed by the "Voice Knob - weekly forecast feed" automation in HA,
+  # which calls weather.get_forecasts every 30 min and writes "cond,hi,lo,Day|..." here.
+  forecast_entity: input_text.va_weekly_forecast
 
   # Control tiles (swipe up): 4 toggles, each entity + icon + name. Works on any HA domain.
   # tileN_icon = a name from the built-in set: bulb lamp led power plug switch fan ac heater
   # thermometer lock unlock door blinds tv speaker bell wifi home flash. Same icon may repeat.
   # (For an icon outside the set: paste its glyph or a "\U000Fxxxx" code from pictogrammers.com.)
-  tile1_entity: light.living_room
+  tile1_entity: light.office
   tile1_icon: "bulb"
-  tile1_name: "Light"
-  tile2_entity: switch.desk_neon
-  tile2_icon: "flash"
-  tile2_name: "Neon"
-  tile3_entity: light.led_strip
-  tile3_icon: "led"
-  tile3_name: "LED strip"
-  tile4_entity: switch.power_socket
-  tile4_icon: "power"
-  tile4_name: "Socket"
+  tile1_name: "Office"
+  tile2_entity: light.living_room
+  tile2_icon: "lamp"
+  tile2_name: "Living"
+  tile3_entity: light.living_room_ceiling
+  tile3_icon: "bulb"
+  tile3_name: "Ceiling"
+  tile4_entity: light.variable
+  tile4_icon: "led"
+  tile4_name: "Variable"
 
   # Sensors screen (knob cycles): up to 6 read-only HA entities, shown one at a time, big.
   # Set as many glanceN as you want; leave the rest at their default (a non-existent entity)
   # and they're skipped. Icon name is optional (same set as the tiles); empty = no icon.
-  glance1_entity: sensor.power
-  glance1_name: "Power"
-  glance1_icon: "flash"
-  glance2_entity: sensor.va_glance_unused2
-  glance2_name: ""
-  glance2_icon: ""
-  glance3_entity: sensor.va_glance_unused3
-  glance3_name: ""
-  glance3_icon: ""
-  glance4_entity: sensor.va_glance_unused4
-  glance4_name: ""
-  glance4_icon: ""
-  glance5_entity: sensor.va_glance_unused5
-  glance5_name: ""
-  glance5_icon: ""
+  glance1_entity: sensor.ths01_temperature
+  glance1_name: "Indoor"
+  glance1_icon: "thermometer"
+  glance2_entity: sensor.ths01_humidity
+  glance2_name: "Indoor RH"
+  glance2_icon: "moisture"
+  glance3_entity: sensor.ths05_temperature
+  glance3_name: "Outdoor"
+  glance3_icon: "thermometer"
+  glance4_entity: sensor.ths05_humidity
+  glance4_name: "Outdoor RH"
+  glance4_icon: "moisture"
+  glance5_entity: sensor.pixel_9_pro_xl_battery_level
+  glance5_name: "Phone"
+  glance5_icon: "flash"
   glance6_entity: sensor.va_glance_unused6
   glance6_name: ""
   glance6_icon: ""
 
-  # External Media Player screen (carousel name "ext"): controls any media player
-  # via HA button entities - HASS.agent, Kodi, a TV, or any device with HA buttons.
-  # Knob = volume. Tap prev/play-pause/next/mute on screen.
-  # Omit these if you are not using the ext-media-player screen.
-  ext_name: "PC"                                    # label shown on the screen header
-  ext_play_entity: button.your_play_pause           # HA button entity for play/pause
-  ext_prev_entity: button.your_previous_track       # HA button entity for previous
-  ext_next_entity: button.your_next_track           # HA button entity for next
-  ext_mute_entity: button.your_mute                 # HA button entity for mute toggle
-  ext_vol_up_entity: button.your_volume_up          # HA button entity for volume up
-  ext_vol_down_entity: button.your_volume_down      # HA button entity for volume down
-  ext_volume_entity: media_player.va_ext_volume_unused  # optional: read-only volume level (amber
-                                                     # arc on the screen); leave unset to skip it
+  # Not configured here on purpose:
+  #   climate_entity  - this HA has no climate.* entities, so base/screens/thermostat.yaml is out.
+  #   ext_*_entity    - the External Media Player screen drives button.* entities (HASS.agent,
+  #                     Kodi, ...); this HA exposes none, so base/screens/ext-media-player.yaml is out.
 
   # Carousel order, left to right. Reorder/remove names freely; screens you did not
   # include in "files:" below are skipped automatically.
-  screen_order: "clock,player,timer,cars,space,snake,knobuss,weather,thermostat,sensors,ext,demo"
+  screen_order: "clock,player,timer,weather,sensors,cars,space,snake,knobuss,demo"
 
 packages:
   core:
-    url: https://github.com/MichalZaniewicz/esphome-guition-jc3636k718c-va
+    url: https://github.com/h3ll5ur7er/dialscreen
     ref: main
     # Pick your screens here: comment out a base/screens/*.yaml line to drop that screen
     # from the firmware. Only the clock + controls + settings live in base/core.yaml
@@ -105,10 +101,10 @@ packages:
       - base/screens/snake.yaml        # optional: Snake game (knob steers)
       - base/screens/knobuss.yaml      # optional: Knobuss - a Gyruss-style tube shooter (knob aims, auto-fire)
       - base/screens/weather.yaml      # optional: weather (today + 7-day, knob scrolls days)
-      - base/screens/thermostat.yaml   # optional: thermostat (climate.* entity; knob sets target, tap on/off)
       - base/screens/sensors.yaml      # optional: sensors glance (1-6 HA entities, knob cycles)
-      - base/screens/ext-media-player.yaml # optional: external media player (knob = volume, tap prev/play/next/mute)
       - base/screens/demo.yaml         # optional: commented example screen (TAP ME!) + Widgets settings
+      # - base/screens/thermostat.yaml       # needs a climate.* entity - none in this HA
+      # - base/screens/ext-media-player.yaml # needs six button.* entities - none in this HA
       # Watchfaces (optional home-screen looks; Classic is built into core and always available).
       # Comment one out to drop it; pick the active one in Settings > Home > Watchface.
       - base/watchfaces/neon.yaml      # optional: Neon - big two-tone digits + neon rings

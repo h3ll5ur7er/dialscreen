@@ -22,9 +22,7 @@
 #   3. Add "ext" to screen_order in guition-va.yaml:
 #        screen_order: "clock,player,timer,ext,cars,space,weather,demo"
 #
-#   4. Add "ext" to the carousel token map in base/core.yaml:
-#        else if (tok == "ext") id = 11;
-#      (add this after the "knobuss" line)
+#   (The carousel token map in base/core.yaml already knows "ext" -> id 11; nothing to add there.)
 ###############################################################################
 
 esphome:

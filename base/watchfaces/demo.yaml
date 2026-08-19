@@ -15,7 +15,8 @@
 #
 #  Everything you can read from core (no extra entities needed):
 #     id(ha_time).now()        - current time (ESPTime)         -> strftime("%H"), etc.
-#     id(wx_temp).state        - outdoor temperature (float)    + .has_state()
+#     id(g_wx_temp)            - outdoor temperature (float; < -100 = no reading yet). Comes from
+#                                ${outdoor_temp_entity} when set, else the weather entity's forecast.
 #     id(room_temp).state      - room temperature (float)
 #     id(room_hum).state       - room humidity (float)
 #     id(g_nf_glyph)           - weather icon glyph (std::string, MDI in font icons34)

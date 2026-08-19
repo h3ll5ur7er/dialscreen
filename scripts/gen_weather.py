@@ -13,7 +13,7 @@ import os
 ICONS = ["sun", "partly", "moon", "cloud", "rain", "storm", "snow"]
 NF = 8
 DUR = "1400ms"
-BASE = "https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/weather/"
+BASE = "https://raw.githubusercontent.com/h3ll5ur7er/dialscreen/main/assets/sprites/weather/"
 BG = "0x1C2838"; GLOW = "0xCAD6E8"; RIM = "0xDCE6F2"; ACCENT = "0x9AA6B2"; CONDC = "0xCFE0F2"; PAGE = "0x0B1020"
 RING = "0x33455C"   # faint outer ring that traces the bezel
 

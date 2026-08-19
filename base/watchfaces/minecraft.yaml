@@ -25,20 +25,35 @@ globals:
   - { id: g_mc_upd_night,  type: bool, restore_value: no, initial_value: 'false' }
 
 font:
-  - file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/fonts/pixel-font.ttf
+  - file: ${assets_base}/assets/fonts/pixel-font.ttf
     id: mc_font_big
     size: 78
     glyphs: "0123456789:"
-  - file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/fonts/pixel-font.ttf
+  - file: ${assets_base}/assets/fonts/pixel-font.ttf
     id: mc_font_sm
     size: 26
     glyphs: " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"   # date only (uppercased) - no GF_Latin_Core, avoids missing-glyph warnings
 
 image:
-  - { platform: file, id: img_mc_ground, file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/minecraft/ground.png, type: RGB565 }
-  - { platform: file, id: img_mc_sun,    file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/minecraft/sun.png,    type: RGB565, transparency: alpha_channel }
-  - { platform: file, id: img_mc_moon,   file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/minecraft/moon.png,   type: RGB565, transparency: alpha_channel }
-  - { platform: file, id: img_mc_flower, file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sprites/minecraft/flower.png, type: RGB565, transparency: alpha_channel }
+  - platform: file
+    id: img_mc_ground
+    file: ${assets_base}/assets/sprites/minecraft/ground.png
+    type: RGB565
+  - platform: file
+    id: img_mc_sun
+    file: ${assets_base}/assets/sprites/minecraft/sun.png
+    type: RGB565
+    transparency: alpha_channel
+  - platform: file
+    id: img_mc_moon
+    file: ${assets_base}/assets/sprites/minecraft/moon.png
+    type: RGB565
+    transparency: alpha_channel
+  - platform: file
+    id: img_mc_flower
+    file: ${assets_base}/assets/sprites/minecraft/flower.png
+    type: RGB565
+    transparency: alpha_channel
 
 lvgl:
   pages:
@@ -139,8 +154,8 @@ script:
                   - lvgl.label.update:
                       id: mc_sun_temp
                       text: !lambda |-
-                        if (!id(wx_temp).has_state()) return std::string("--°");
-                        char b[10]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(wx_temp).state)); return std::string(b);
+                        if (id(g_wx_temp) < -100.0f) return std::string("--°");
+                        char b[10]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(g_wx_temp))); return std::string(b);
                 else: [ lvgl.widget.hide: mc_sun_temp ]
             - lvgl.label.update:
                 id: mc_hearts

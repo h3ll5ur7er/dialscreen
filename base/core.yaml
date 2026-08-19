@@ -12,6 +12,10 @@
 substitutions:
   name: voice-knob
   friendly_name: "Voice Knob"
+  # Where the compile host fetches fonts, sounds and sprites from. Every asset URL in the
+  # core, the screens and the watchfaces is built from this, so a fork only has to override
+  # it once (here or in the thin config) to serve its own assets.
+  assets_base: "https://raw.githubusercontent.com/h3ll5ur7er/dialscreen/main"
   # Clock timezone. HA does not push its zone to the device, so set yours here. Use a friendly IANA
   # name (e.g. Europe/Warsaw, America/New_York) - core maps the common ones to the POSIX form the
   # device needs (it has no IANA database). For a zone not in that table, paste its POSIX string
@@ -26,6 +30,11 @@ substitutions:
   weather_entity: weather.home
   room_temp_entity: sensor.room_temperature
   room_hum_entity: sensor.room_humidity
+  # Optional: a real outdoor thermometer. Set it and the home screen (and the Neon / Minecraft /
+  # Fortnite faces) show ITS reading instead of the weather entity's forecast temperature; the
+  # weather entity still supplies the condition icon. Leave it at the default (a non-existent
+  # entity) to keep using the forecast temperature.
+  outdoor_temp_entity: sensor.va_outdoor_temp_unused
   climate_entity: climate.home   # thermostat screen target (a climate.* entity)
   # Control tiles (swipe up): 4 toggleable HA entities, each with an icon + a name. Any domain.
   # tileN_icon = a name from the built-in set: bulb lamp led power plug switch fan ac heater
@@ -92,6 +101,11 @@ esphome:
             id(g_set_labels) += "\nWidgets";    id(g_set_items)[id(g_set_n)++] = 17;
             id(g_set_labels) += "\nLED Ring";  id(g_set_items)[id(g_set_n)++] = 16;
             id(g_set_labels) += "\nVoice Assistant"; id(g_set_items)[id(g_set_n)++] = 13;
+    # Register the built-in Classic watchface (id 0). Must run BEFORE the priority-500 finalize,
+    # which validates the saved face and builds the "Watchface: <name>" settings line from g_wf_name.
+    - priority: 795
+      then:
+        - lambda: 'id(g_wf_present)[0] = true; id(g_wf_name)[0] = "Classic";'
     - priority: 760
       then:
         - lambda: |-
@@ -235,7 +249,6 @@ esphome:
         - script.execute: night_apply    # brightness per g_bright / night mode
         - script.execute: disp_apply     # show/hide weather + temp/humidity per settings
         - script.execute: settings_build # push the dynamic settings list into the roller
-        - lambda: 'id(g_wf_present)[0] = true; id(g_wf_name)[0] = "Classic";'   # register the built-in Classic watchface (id 0)
         - lvgl.label.update: { id: tile1_ic, text: !lambda 'return id(g_tile1_glyph);' }   # tiles get their icon glyph now (set at priority 760)
         - lvgl.label.update: { id: tile2_ic, text: !lambda 'return id(g_tile2_glyph);' }
         - lvgl.label.update: { id: tile3_ic, text: !lambda 'return id(g_tile3_glyph);' }
@@ -355,9 +368,9 @@ media_player:
       speaker: media_resampling_speaker
     files:
       - id: wake_sound
-        file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sounds/wake.wav   # beep after the wake word
+        file: ${assets_base}/assets/sounds/wake.wav   # beep after the wake word
       - id: alarm_sound
-        file: https://raw.githubusercontent.com/MichalZaniewicz/esphome-guition-jc3636k718c-va/main/assets/sounds/alarm.wav  # timer alarm (generated with make_sounds.py)
+        file: ${assets_base}/assets/sounds/alarm.wav  # timer alarm (generated with make_sounds.py)
 
 microphone:
   - platform: i2s_audio
@@ -376,9 +389,12 @@ voice_assistant:
   noise_suppression_level: 2
   auto_gain: 31dBFS
   volume_multiplier: 2.0
-  # Wake word works only when connected to HA (Assist pipeline)
+  # Wake word only runs while HA is connected - and only when Settings -> Voice Assistant
+  # has it enabled (g_ww_on), otherwise a reconnect would silently re-arm a disabled wake word.
   on_client_connected:
-    - micro_wake_word.start:
+    - if:
+        condition: { lambda: 'return id(g_ww_on);' }
+        then: [ micro_wake_word.start: ]
   on_client_disconnected:
     - micro_wake_word.stop:
   on_listening:
@@ -424,7 +440,9 @@ voice_assistant:
               id: media_mixing_input
               decibel_reduction: 0
               duration: 0.3s
-    - micro_wake_word.start:        # resume listening for the wake word
+    - if:                           # resume listening for the wake word (unless switched off in Settings)
+        condition: { lambda: 'return id(g_ww_on);' }
+        then: [ micro_wake_word.start: ]
     - script.execute: ring_update
   on_error:
     - lambda: 'id(g_va_active) = false;'
@@ -433,7 +451,9 @@ voice_assistant:
         id: media_mixing_input
         decibel_reduction: 0
         duration: 0.3s
-    - micro_wake_word.start:
+    - if:
+        condition: { lambda: 'return id(g_ww_on);' }
+        then: [ micro_wake_word.start: ]
     - script.execute: ring_update
   # --- Timers set by VOICE (HA counts down, the puck shows the same screen as the knob timer) ---
   on_timer_started:
@@ -613,6 +633,10 @@ globals:
     type: std::string
     restore_value: no
     initial_value: '""'
+  - id: g_wx_temp      # effective outdoor temperature: ${outdoor_temp_entity} if it reports,
+    type: float        # otherwise the weather entity's forecast temperature (-127 = nothing yet)
+    restore_value: no
+    initial_value: '-127.0'
   - id: g_night        # Night mode: screen dimming (persistent)
     type: bool
     restore_value: yes
@@ -657,9 +681,9 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
-  - id: g_bright       # screen brightness in % (settings)
+  - id: g_bright       # screen brightness in % (settings; persisted like the other Display values)
     type: int
-    restore_value: no
+    restore_value: yes
     initial_value: '100'
   - id: g_batt         # battery level in % (-1 = no reading yet -> show "-")
     type: int
@@ -724,9 +748,9 @@ globals:
     type: int
     restore_value: no
     initial_value: '0'
-  - id: g_ww_on        # wake word enabled
+  - id: g_ww_on        # wake word enabled (Settings -> Voice Assistant; persistent)
     type: bool
-    restore_value: no
+    restore_value: yes
     initial_value: 'true'
   # --- LED ring (WS2812): reaction state + snapshot of HA state to restore ---
   - id: g_ring_cur     # currently shown reaction: 0=HA state 1=alarm 2=assistant 3=timer
@@ -931,6 +955,14 @@ script:
             - script.execute: disp_apply
           else:
             - lambda: 'id(g_wf_req) = true;'
+  # Outdoor temperature -> the Classic face's label. One writer for both sources (see g_wx_temp).
+  - id: wx_temp_render
+    then:
+      - lvgl.label.update:
+          id: lbl_wx_val
+          text: !lambda |-
+            if (id(g_wx_temp) < -100.0f) return std::string("");
+            char b[10]; snprintf(b, sizeof(b), "%d°", (int) roundf(id(g_wx_temp))); return std::string(b);
   # Rebuild the Home settings roller so its 3rd line shows the current watchface name.
   - id: home_roller_build
     then:
@@ -1461,10 +1493,21 @@ sensor:
     id: wx_temp
     entity_id: ${weather_entity}
     attribute: temperature
+    # Forecast temperature: only used while no real outdoor sensor is reporting, so a configured
+    # ${outdoor_temp_entity} always wins and the two can't fight over the same label.
     on_value:
-      - lvgl.label.update:
-          id: lbl_wx_val
-          text: !lambda 'char b[10]; snprintf(b, sizeof(b), "%d°", (int) roundf(x)); return std::string(b);'
+      - if:
+          condition: { lambda: 'return !id(out_temp).has_state();' }
+          then:
+            - lambda: 'id(g_wx_temp) = x;'
+            - script.execute: wx_temp_render
+  # Optional local outdoor thermometer (${outdoor_temp_entity}); takes priority over the forecast.
+  - platform: homeassistant
+    id: out_temp
+    entity_id: ${outdoor_temp_entity}
+    on_value:
+      - lambda: 'id(g_wx_temp) = x;'
+      - script.execute: wx_temp_render
   - platform: homeassistant
     id: room_temp
     entity_id: ${room_temp_entity}
@@ -2181,7 +2224,7 @@ touchscreen:
               condition: { lambda: 'return id(g_gesture) == 0;' }
               then:
                 - lambda: |-
-                    id(g_bright)=100; id(g_night)=false; id(g_show_weather)=false; id(g_show_climate)=false; id(g_watchface)=0; id(g_ww_on)=true; id(g_set_min)=60; id(g_beep_ww)=true; id(g_hold_talk)=true; id(g_night_from)=22; id(g_night_to)=7; id(g_blank_idx)=0; id(g_factory_reset)=true;
+                    id(g_bright)=100; id(g_night)=false; id(g_show_weather)=true; id(g_show_climate)=true; id(g_watchface)=0; id(g_ww_on)=true; id(g_set_min)=60; id(g_beep_ww)=true; id(g_hold_talk)=true; id(g_night_from)=22; id(g_night_to)=7; id(g_blank_idx)=0; id(g_factory_reset)=true;
                 - button.press: btn_restart
           - if: { condition: { lambda: 'return id(g_gesture) == 3 || id(g_gesture) == 1;' }, then: [ lambda: 'id(g_mode) = 15;', script.execute: ui_render ] }
     # === INFO (7) === any gesture = return to the settings list
